@@ -1,0 +1,28 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Data files
+*.csv
+*.xlsx
+
+# Presentations
+*.pptx
+
+# Text and Logs
+*.log
+ciks.txt
+
+# Images / Plots
+*.png
+risk_plots/
+
+# Environment
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
