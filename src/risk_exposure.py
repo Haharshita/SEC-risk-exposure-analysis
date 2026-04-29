@@ -96,12 +96,15 @@ csv_filename = r"C:\Users\Admin\Downloads\New folder\comprehensive_risk_analysis
 
 # --- RESUME LOGIC ---
 processed_records = set()
+start_year = 2000
 if os.path.exists(csv_filename):
     try:
         df_existing = pd.read_csv(csv_filename, usecols=['cik', 'Year'], dtype={'cik': str})
         for _, row in df_existing.iterrows():
             processed_records.add((str(row['cik']).lstrip('0'), int(row['Year'])))
-        print(f"Found {len(processed_records)} already processed records in {csv_filename}. These will be skipped.")
+        if not df_existing.empty:
+            start_year = int(df_existing['Year'].max())
+        print(f"Found {len(processed_records)} already processed records in {csv_filename}. Resuming from year {start_year}.")
     except Exception as e:
         print(f"Could not read existing CSV for resumption: {e}")
 
@@ -122,7 +125,7 @@ cumulative_ciks_done = len(processed_records)
 batch_times = []  # running list of batch durations for ETA
 script_start_time = time.time()
 
-for year in range(2000, 2027):
+for year in range(start_year, 2027):
     print(f"\n{'='*40}")
     print(f"PROCESSING YEAR: {year}")
     print(f"{'='*40}")
