@@ -99,9 +99,12 @@ processed_records = set()
 start_year = 2000
 if os.path.exists(csv_filename):
     try:
-        df_existing = pd.read_csv(csv_filename, usecols=['cik', 'Year'], dtype={'cik': str})
+        df_existing = pd.read_csv(csv_filename, usecols=['cik', 'Year', 'word_count'], dtype={'cik': str})
         for _, row in df_existing.iterrows():
-            processed_records.add((str(row['cik']).lstrip('0'), int(row['Year'])))
+            # -2 indicates a previous network failure, so we DO NOT add it to processed_records 
+            # This ensures the script will try downloading it again
+            if row.get('word_count', 0) != -2:
+                processed_records.add((str(row['cik']).lstrip('0'), int(row['Year'])))
         if not df_existing.empty:
             start_year = int(df_existing['Year'].max())
         print(f"Found {len(processed_records)} already processed records in {csv_filename}. Resuming from year {start_year}.")
@@ -164,12 +167,18 @@ for year in range(start_year, 2027):
                 except Exception:
                     pass
                     
-            try:
-                print(f"  Downloading CIK {cik}...")
-                dl.get("10-K", cik, after=f"{year}-01-01", before=f"{year+1}-01-01", download_details=False)
-                time.sleep(0.15)
-            except Exception as e:
-                print(f"  Failed to download for {cik}: {e}")
+            max_retries = 3
+            download_success = False
+            for attempt in range(max_retries):
+                try:
+                    print(f"  Downloading CIK {cik} (Attempt {attempt + 1}/{max_retries})...")
+                    dl.get("10-K", cik, after=f"{year}-01-01", before=f"{year+1}-01-01", download_details=False)
+                    time.sleep(0.15)
+                    download_success = True
+                    break
+                except Exception as e:
+                    print(f"  Failed to download for {cik} on attempt {attempt + 1}: {e}")
+                    time.sleep(2) # Give the SEC servers a brief break before retrying
         
             # Preprocess immediately
             base_dir = "sec-edgar-filings"
@@ -218,13 +227,14 @@ for year in range(start_year, 2027):
                     pass
             
             if not results:
-                # Need to add placeholder to bypass this in the future
+                # -1 = Genuinely no 10-K found that year (Do not retry)
+                # -2 = Network/Rate limit failure (Will retry on next script execution)
                 results.append({
                     "cik": raw_cik_str,
                     "ticker": cik_lookup.get(raw_cik_str, {}).get("ticker", "N/A"),
                     "coname": cik_lookup.get(raw_cik_str, {}).get("name", "Unknown"),
                     "Year": year,
-                    "word_count": -1 # Special negative value to denote empty result
+                    "word_count": -1 if download_success else -2
                 })
                 
             df_batch = pd.DataFrame(results)

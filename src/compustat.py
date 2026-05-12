@@ -21,8 +21,8 @@ WHERE indfmt = 'INDL'
   AND datafmt = 'STD' 
   AND consol = 'C' 
   AND popsrc = 'D'
-  AND fyear >= 2016
-  AND fyear < 2017
+  AND fyear >= 2000
+  AND fyear <= 2023
   AND at > 0
 """
 
