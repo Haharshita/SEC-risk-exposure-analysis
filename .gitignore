@@ -4,8 +4,8 @@ __pycache__/
 *$py.class
 
 # Data files
-*.csv
-*.xlsx
+# *.csv
+# *.xlsx
 
 # Presentations
 *.pptx
